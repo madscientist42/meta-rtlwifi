@@ -1,0 +1,41 @@
+From 666fe23579017c770cc8c76d22392aa9e5f555bd Mon Sep 17 00:00:00 2001
+From: Frank Earl <frank@earlconsult.com>
+Date: Thu, 17 Jul 2025 00:26:15 -0500
+Subject: [PATCH] Fix the makefile so Yocto can actually DO it's thing.
+
+- There's a fixed path that wasn't variable controlled in the Makefile
+  that put the modprobe.d content in the HOST's space.
+- Makefile BLITHELY presumes DKMS their way instead of the
+  canonical out-of-tree process that CLEANLY works with DKMS.
+---
+ Makefile | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index a606c8f..68c2986 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,6 +3,7 @@ KVER ?= $(if $(KERNELRELEASE),$(KERNELRELEASE),$(shell uname -r))
+ KSRC ?= $(if $(KERNEL_SRC),$(KERNEL_SRC),/lib/modules/$(KVER)/build)
+ FWDIR := /lib/firmware/rtw88
+ JOBS ?= $(shell nproc --ignore=1)
++MODPROBEDIR ?= /etc/modprobe.d
+ MODLIST := rtw_8723cs rtw_8723de rtw_8723ds rtw_8723du \
+ 	   rtw_8812au rtw_8814ae rtw_8814au rtw_8821au rtw_8821ce rtw_8821cs rtw_8821cu \
+ 	   rtw_8822be rtw_8822bs rtw_8822bu rtw_8822ce rtw_8822cs rtw_8822cu \
+@@ -179,12 +180,12 @@ endif
+ obj-m		+= rtw_usb.o
+ rtw_usb-objs	:= usb.o
+ 
+-all: 
++all:
+ 	$(MAKE) -j$(JOBS) -C $(KSRC) M=$$PWD modules
+-	
++
+ install: all
+ 	@install -D -m 644 -t $(MODDESTDIR) *.ko
+-	@install -D -m 644 -t /etc/modprobe.d rtw88.conf
++	@install -D -m 644 -t ${MODPROBEDIR} rtw88.conf
+ 
+ ifeq ($(COMPRESS_GZIP), y)
+ 	@gzip -f $(MODDESTDIR)/*.ko
